@@ -1,0 +1,92 @@
+{
+    "large": "big",
+    "huge": "big",
+    "gigantic": "big",
+    "massive": "big",
+
+    "avian": "bird",
+    "fowl": "bird",
+
+    "red liquid": "blood",
+    "lifeblood": "blood",
+
+    "novel": "book",
+    "manual": "book",
+    "volume": "book",
+
+    "farewell": "bye",
+    "see you": "bye",
+    "goodbye": "bye",
+
+    "arrive": "come",
+    "approach": "come",
+
+    "4": "four",
+    "IV": "four",
+
+    "farewell": "good bye",
+    "see you": "good bye",
+    "bye": "good bye",
+
+    "nice": "good",
+    "great": "good",
+    "fine": "good",
+
+    "listen": "hear",
+    "perceive": "hear",
+
+    "greetings": "hello",
+    "hi": "hello",
+
+    "hey": "hi",
+    "hai": "hi",
+    "hii":"hi",
+    "hiii":"hi",
+    "hiiii":"hi",
+
+    "myself": "me",
+    "I": "me",
+
+    "mine": "my",
+    "belonging to me": "my",
+
+    "nah": "no",
+    "nope": "no",
+
+    "kindly": "please",
+    "if you may": "please",
+
+    "gesture": "sign",
+    "symbol": "sign",
+
+    "amazing": "super",
+    "fantastic": "super",
+    "excellent": "super",
+
+    "thanks": "ThankYou",
+    "thx": "ThankYou",
+    "thnq":"ThankYou",
+
+    "3": "three",
+    "III": "three",
+
+    "2": "two",
+    "II": "two",
+
+    "input": "type",
+    "write": "type",
+
+    "identity": "name",
+    "title": "name",
+
+    "greet": "welcome",
+    "receive": "welcome",
+
+    "yourself": "you",
+
+    "yeah":"yes",
+    "yo":"yes",
+    "yep":"yes",
+    "i agree":"yes"
+
+}
