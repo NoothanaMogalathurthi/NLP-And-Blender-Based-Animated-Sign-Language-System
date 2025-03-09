@@ -1,1 +1,0 @@
-# Animated-Sign-Language-System
