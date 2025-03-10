@@ -75,7 +75,8 @@ def animation_view(request):
             if not text:
                 raise ValueError("No input text provided.")
             
-            text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+            text = re.sub(r'[^\w\s]', ' ', text)  # Replace punctuation with space
+            text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
 
             text = text.lower()
             words = word_tokenize(text)
@@ -113,7 +114,10 @@ def animation_view(request):
             if probable_tense == "past" and tense["past"] > 0:
                 filtered_words.insert(0, "Before")
             elif probable_tense == "future" and tense["future"] > 0:
-                filtered_words.insert(0, "Will")
+                for i, (word, tag) in enumerate(tagged):
+                    if word == "will":
+                        filtered_words.insert(i, "Will")  # Keep "Will" at its original index
+                        break
             elif probable_tense == "present_continuous" and tense["present_continuous"] > 0:
                 filtered_words.insert(0, "Now")
             logger.info(f"Final Processed Words: {filtered_words}")
