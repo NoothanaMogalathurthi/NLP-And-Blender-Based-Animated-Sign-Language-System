@@ -17,8 +17,9 @@ import json
 import os
 from django.conf import settings
 import re
+import contractions  # Import contractions library
 
-
+# Load custom synonyms
 try:
     with open(settings.SYNONYM_PATH, 'r', encoding='utf-8') as f:
         custom_synonyms = json.load(f)
@@ -26,7 +27,6 @@ except Exception as e:
     custom_synonyms = {}
     logging.error(f"Could not load synonyms.json: {e}")
 
-# Logging
 logger = logging.getLogger(__name__)
 
 def home_view(request):
@@ -38,7 +38,6 @@ def about_view(request):
 def contact_view(request):
     return render(request, 'contact.html')
 
-# Load custom synonyms from synonyms.json
 def load_custom_synonyms():
     """Loads custom synonym dictionary from a JSON file."""
     try:
@@ -50,7 +49,6 @@ def load_custom_synonyms():
     except json.JSONDecodeError:
         logger.error("Error: Invalid JSON format in synonyms.json.")
         return {}
-
 
 custom_synonyms = load_custom_synonyms()
 
@@ -66,7 +64,6 @@ def find_synonym(word):
 
     return synonyms[0] if synonyms else None  # Return first synonym if exists
 
-
 @login_required(login_url="login")
 def animation_view(request):
     if request.method == 'POST':
@@ -75,26 +72,29 @@ def animation_view(request):
             if not text:
                 raise ValueError("No input text provided.")
             
+            # ✅ Expand contractions to preserve negation
+            text = contractions.fix(text)  # Example: "didn't" → "did not"
+
             text = re.sub(r'[^\w\s]', ' ', text)  # Replace punctuation with space
             text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
-
             text = text.lower()
+            
             words = word_tokenize(text)
             tagged = nltk.pos_tag(words)
 
-            #  Detect tense BEFORE filtering
+            # Detect tense BEFORE filtering
             tense = {
-            "future": len([word for word in tagged if word[1] == "MD"]),
-            "present": len([word for word in tagged if word[1] in ["VBP", "VBZ", "VBG"]]),
-            "past": len([word for word in tagged if word[1] in ["VBD", "VBN"]]),
-            "present_continuous": len([word for word in tagged if word[1] == "VBG"]),
+                "future": len([word for word in tagged if word[1] == "MD"]),
+                "present": len([word for word in tagged if word[1] in ["VBP", "VBZ", "VBG"]]),
+                "past": len([word for word in tagged if word[1] in ["VBD", "VBN"]]),
+                "present_continuous": len([word for word in tagged if word[1] == "VBG"]),
             }
 
             probable_tense = max(tense, key=tense.get)
             logger.info(f"Chosen Tense: {probable_tense}")
 
-            #  Filter and lemmatize words
-            important_words = {"i", "he", "she", "they", "we", "what", "where", "how", "you", "your", "my", "name", "hear", "book", "sign", "me", "yes", "no","not","this","it","we","us","our","that","when"}
+            # Stopword filtering and lemmatization
+            important_words = {"i", "he", "she", "they", "we", "what", "where", "how", "you", "your", "my", "name", "hear", "book", "sign", "me", "yes", "no", "not", "this", "it", "we", "us", "our", "that", "when"}
             stop_words = set(stopwords.words('english')) - important_words
             isl_replacements = {"i": "me"}
             lr = WordNetLemmatizer()
@@ -110,7 +110,7 @@ def animation_view(request):
                     else:
                         filtered_words.append(lr.lemmatize(word))
 
-            #  Insert tense words AFTER filtering
+            # Insert tense words AFTER filtering
             if probable_tense == "past" and tense["past"] > 0:
                 filtered_words.insert(0, "Before")
             elif probable_tense == "future" and tense["future"] > 0:
@@ -118,14 +118,11 @@ def animation_view(request):
             elif probable_tense == "present_continuous" and tense["present_continuous"] > 0:
                 filtered_words.insert(0, "Now")
             logger.info(f"Final Processed Words: {filtered_words}")
-            words = filtered_words  # Ensure final processing uses updated list
 
-
-
-            #  Process words for animations
+            # Process words for animations
             synonym_mapping = {}
             processed_words = []
-            for w in words:
+            for w in filtered_words:
                 path = w + ".mp4"
                 animation_path = finders.find(path)
 
@@ -164,39 +161,54 @@ def animation_view(request):
 # Signup view
 def signup_view(request):
     if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+
+        if not username or not email or not password1 or not password2:
+            return render(request, 'signup.html', {'error': "All fields are required."})
+
+        if password1 != password2:
+            return render(request, 'signup.html', {'error': "Passwords do not match."})
+
+        if User.objects.filter(email=email).exists():
+            return render(request, 'signup.html', {'error': "Email already exists."})
+
         try:
-            form = UserCreationForm(request.POST)
-            if form.is_valid():
-                user = form.save()
-                login(request, user)
-                return redirect('animation')
-            else:
-                return render(request, 'signup.html', {'form': form, 'error': "Invalid signup details."})
+            user = User.objects.create_user(username=username, email=email, password=password1)
+            user.save()
+            login(request, user)  
+            return redirect('animation')
         except Exception as e:
-            logger.error(f"Error during signup: {e}")
-            return render(request, 'signup.html', {'form': UserCreationForm(), 'error': "An unexpected error occurred."})
-    else:
-        return render(request, 'signup.html', {'form': UserCreationForm()})
+            return render(request, 'signup.html', {'error': f"Error: {e}"})
+
+    return render(request, 'signup.html')
 
 # Login view
 def login_view(request):
     if request.method == 'POST':
-        try:
-            form = AuthenticationForm(data=request.POST)
-            if form.is_valid():
-                user = form.get_user()
-                login(request, user)
-                if 'next' in request.POST:
-                    return redirect(request.POST.get('next'))
-                else:
-                    return redirect('animation')
-            else:
-                return render(request, 'login.html', {'form': form, 'error': "Invalid login details."})
-        except Exception as e:
-            logger.error(f"Error during login: {e}")
-            return render(request, 'login.html', {'form': AuthenticationForm(), 'error': "An unexpected error occurred."})
-    else:
-        return render(request, 'login.html', {'form': AuthenticationForm()})
+        identifier = request.POST.get('identifier')  
+        password = request.POST.get('password')
+
+        user = None
+
+        if '@' in identifier:  
+            try:
+                user_obj = User.objects.get(email=identifier)
+                user = authenticate(request, username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                return render(request, 'login.html', {'error': "Invalid email or password."})
+        else:
+            user = authenticate(request, username=identifier, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('animation')
+        else:
+            return render(request, 'login.html', {'error': "Invalid credentials."})
+
+    return render(request, 'login.html')
 
 # Logout view
 def logout_view(request):
@@ -221,4 +233,3 @@ def check_animation(request, word):
     path = word + ".mp4"
     file_exists = bool(finders.find(path))
     return JsonResponse({'word': word, 'exists': file_exists})
-    
