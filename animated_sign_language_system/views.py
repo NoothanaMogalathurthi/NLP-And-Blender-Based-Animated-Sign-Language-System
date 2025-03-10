@@ -114,10 +114,7 @@ def animation_view(request):
             if probable_tense == "past" and tense["past"] > 0:
                 filtered_words.insert(0, "Before")
             elif probable_tense == "future" and tense["future"] > 0:
-                for i, (word, tag) in enumerate(tagged):
-                    if word == "will":
-                        filtered_words.insert(i, "Will")  # Keep "Will" at its original index
-                        break
+                filtered_words.insert(0, "Will")
             elif probable_tense == "present_continuous" and tense["present_continuous"] > 0:
                 filtered_words.insert(0, "Now")
             logger.info(f"Final Processed Words: {filtered_words}")
