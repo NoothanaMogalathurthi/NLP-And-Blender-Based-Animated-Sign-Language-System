@@ -254,3 +254,43 @@ Traceback (most recent call last):
     raise TemplateSyntaxError(
 django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '[word]' from 'synonym_mapping[word]'
 "GET /animation/ HTTP/1.1" 500 224173
+Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\exception.py", line 56, in inner
+    response = get_response(request)
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Divya\Desktop\Animated-Sign-Language-System\animated_sign_language_system\views.py", line 196, in login_view
+    if '@' in identifier:
+TypeError: argument of type 'NoneType' is not iterable
+"POST /login/ HTTP/1.1" 500 67125
+Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\exception.py", line 56, in inner
+    response = get_response(request)
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Divya\Desktop\Animated-Sign-Language-System\animated_sign_language_system\views.py", line 196, in login_view
+    if '@' in identifier:
+TypeError: argument of type 'NoneType' is not iterable
+"POST /login/ HTTP/1.1" 500 67125
+Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\exception.py", line 56, in inner
+    response = get_response(request)
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Divya\Desktop\Animated-Sign-Language-System\animated_sign_language_system\views.py", line 196, in login_view
+    if '@' in identifier:
+TypeError: argument of type 'NoneType' is not iterable
+"POST /login/ HTTP/1.1" 500 67125
+Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\exception.py", line 56, in inner
+    response = get_response(request)
+  File "C:\Users\Divya\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Divya\Desktop\Animated-Sign-Language-System\animated_sign_language_system\views.py", line 196, in login_view
+    if '@' in identifier:
+TypeError: argument of type 'NoneType' is not iterable
+"POST /login/ HTTP/1.1" 500 67125

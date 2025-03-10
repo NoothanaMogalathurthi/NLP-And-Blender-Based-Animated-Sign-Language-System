@@ -65,51 +65,31 @@
         try {
             var recognition = new webkitSpeechRecognition();
             recognition.lang = 'en-IN';
-            recognition.continuous = false; // Enable continuous listening
+            recognition.continuous = true; // Enable continuous listening
             recognition.interimResults = false; // Only capture final results
- 	    const TOTAL_DURATION = 10000; // Total time limit in milliseconds
-            let startTime;
-            let fullTranscript = ""; // To accumulate cleaned results
-
-
 
             recognition.onresult = function(event) {
-                let transcript = event.results[0][0].transcript;
-                // Remove commas and full stops
-                transcript = transcript.replace(/[,.]/g, '');
-                fullTranscript += transcript + " "; // Append cleaned result with a space
-                // Display the cleaned transcript
-                document.getElementById('speechToText').value = fullTranscript.trim();
+                clearTimeout(pauseTimeout); // Reset the pause detection timer
+                document.getElementById('speechToText').value = event.results[0][0].transcript;
             };
 
             recognition.onerror = function(event) {
                 alert('Speech recognition error: ' + event.error);
-		recognition.stop();
             };
 
+            let pauseTimeout;
             recognition.onstart = function() {
-                 if (!startTime) {
-                    startTime = Date.now(); // Set start time on first run
-                }
-                const elapsedTime = Date.now() - startTime;
-                if (elapsedTime >= TOTAL_DURATION) {
-                    recognition.stop();
-                }
+                // Stop recognition after 3 seconds of inactivity
+                pauseTimeout = setTimeout(() => recognition.stop(), 30000); //pause time 30 seconds
             };
 
             recognition.onend = function() {
-                const elapsedTime = Date.now() - startTime;
-                if (elapsedTime < TOTAL_DURATION) {
-                    // Restart recognition if time limit hasn't been reached
-                    recognition.start();
-                } else {
-                    alert('Speech recognition time limit reached and stopped.');
-                }
+                clearTimeout(pauseTimeout);
+                alert('Speech recognition has stopped.');
             };
 
-
             recognition.start();
-        }catch (error) {
+        } catch (error) {
             alert('Speech recognition is not supported in this browser.');
             console.error(error);
         }
