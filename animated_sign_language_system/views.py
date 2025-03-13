@@ -72,7 +72,7 @@ def animation_view(request):
             if not text:
                 raise ValueError("No input text provided.")
             
-            # ✅ Expand contractions to preserve negation
+            #  Expand contractions to preserve negation
             text = contractions.fix(text)  # Example: "didn't" → "did not"
 
             text = re.sub(r'[^\w\s]', ' ', text)  # Replace punctuation with space
@@ -96,6 +96,7 @@ def animation_view(request):
             # Stopword filtering and lemmatization
             important_words = {"i", "he", "she", "they", "we", "what", "where", "how", "you", "your", "my", "name", "hear", "book", "sign", "me", "yes", "no", "not", "this", "it", "we", "us", "our", "that", "when"}
             stop_words = set(stopwords.words('english')) - important_words
+            stop_words.update(['would','could','shall'])
             isl_replacements = {"i": "me"}
             lr = WordNetLemmatizer()
 
