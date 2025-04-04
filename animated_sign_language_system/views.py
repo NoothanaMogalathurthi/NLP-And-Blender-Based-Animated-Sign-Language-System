@@ -2,10 +2,10 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
-from django.contrib.auth.models import User  # Import User model
+from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 import nltk
-import string 
+import string
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -15,17 +15,10 @@ from django.contrib.auth.decorators import login_required
 import logging
 import json
 import os
+import subprocess  # For FFmpeg animation merging
 from django.conf import settings
 import re
-import contractions  # Import contractions library
-
-# Load custom synonyms
-try:
-    with open(settings.SYNONYM_PATH, 'r', encoding='utf-8') as f:
-        custom_synonyms = json.load(f)
-except Exception as e:
-    custom_synonyms = {}
-    logging.error(f"Could not load synonyms.json: {e}")
+import contractions
 
 logger = logging.getLogger(__name__)
 
@@ -62,45 +55,44 @@ def find_synonym(word):
         for lemma in syn.lemmas():
             synonyms.append(lemma.name())
 
-    return synonyms[0] if synonyms else None  # Return first synonym if exists
-
+    return synonyms[0] if synonyms else None
 @login_required(login_url="login")
 def animation_view(request):
     if request.method == 'POST':
         try:
             text = request.POST.get('sen')
-            if not text:
-                raise ValueError("No input text provided.")
-            
-            #  Expand contractions to preserve negation
-            text = contractions.fix(text)  # Example: "didn't" → "did not"
 
-            text = re.sub(r'[^\w\s]', ' ', text)  # Replace punctuation with space
-            text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
+            if not text:
+                return render(request, 'animation.html', {'error': "Please enter text."})
+            print("Received Input:", text)
+
+            text = contractions.fix(text)
+            text = re.sub(r'[^\w\s]', ' ', text)  
+            text = re.sub(r'\s+', ' ', text).strip()
             text = text.lower()
-            
+
             words = word_tokenize(text)
             tagged = nltk.pos_tag(words)
 
-            # Detect tense BEFORE filtering
+            # Detect tense
             tense = {
                 "future": len([word for word in tagged if word[1] == "MD"]),
                 "present": len([word for word in tagged if word[1] in ["VBP", "VBZ", "VBG"]]),
                 "past": len([word for word in tagged if word[1] in ["VBD", "VBN"]]),
                 "present_continuous": len([word for word in tagged if word[1] == "VBG"]),
             }
-
             probable_tense = max(tense, key=tense.get)
-            logger.info(f"Chosen Tense: {probable_tense}")
+            print(f"Chosen Tense: {probable_tense}")
 
-            # Stopword filtering and lemmatization
             important_words = {"i", "he", "she", "they", "we", "what", "where", "how", "you", "your", "my", "name", "hear", "book", "sign", "me", "yes", "no", "not", "this", "it", "we", "us", "our", "that", "when"}
             stop_words = set(stopwords.words('english')) - important_words
-            stop_words.update(['would','could','shall'])
+            stop_words.update(['would', 'could', 'shall'])
             isl_replacements = {"i": "me"}
             lr = WordNetLemmatizer()
 
             filtered_words = []
+            video_clips = []
+
             for word, tag in tagged:
                 if word not in stop_words:
                     word = isl_replacements.get(word, word)
@@ -111,17 +103,16 @@ def animation_view(request):
                     else:
                         filtered_words.append(lr.lemmatize(word))
 
-            # Insert tense words AFTER filtering
+            #  Insert tense words AFTER filtering
             if probable_tense == "past" and tense["past"] > 0:
                 filtered_words.insert(0, "Before")
             elif probable_tense == "future" and tense["future"] > 0:
                 filtered_words.insert(0, "Will")
             elif probable_tense == "present_continuous" and tense["present_continuous"] > 0:
                 filtered_words.insert(0, "Now")
-            logger.info(f"Final Processed Words: {filtered_words}")
 
-            # Process words for animations
-            synonym_mapping = {}
+            print(f"Final Processed Words: {filtered_words}")
+
             processed_words = []
             for w in filtered_words:
                 path = w + ".mp4"
@@ -129,35 +120,78 @@ def animation_view(request):
 
                 if animation_path:
                     processed_words.append(w)
+                    video_clips.append(animation_path)
                 else:
                     synonym = find_synonym(w)
                     if synonym and finders.find(synonym + ".mp4"):
                         processed_words.append(synonym)
-                        synonym_mapping[w] = synonym
-                        logger.info(f"Using synonym '{synonym}' for '{w}'")
+                        video_clips.append(finders.find(synonym + ".mp4"))
                     else:
-                        logger.warning(f"No animation found for '{w}', breaking into letters.")
-                        processed_words.extend(list(w))
+                        for letter in w:
+                            letter_path = letter + ".mp4"
+                            if finders.find(letter_path):
+                                video_clips.append(finders.find(letter_path))
+                                processed_words.append(letter)
 
-            logger.info(f"Processed Words: {processed_words}")
+            missing_files = [w for w in processed_words if not finders.find(w + ".mp4")]
+            if missing_files:
+                print("Missing Animations:", missing_files)
+                return render(request, 'animation.html', {'error': f"Missing animations for {', '.join(missing_files)}"})
 
-            return render(request, 'animation.html', {
-                'words': processed_words,
-                'text': text,
-                'synonym_mapping': synonym_mapping
-            })
+            sanitized_text = re.sub(r'[^\w\-_]', '', text)
+            output_video_filename = f"{sanitized_text}.mp4"
+            output_video_path = os.path.join(settings.MEDIA_ROOT, "animations", output_video_filename)
+            os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
+
+            if video_clips:
+                temp_list_file = os.path.join(settings.MEDIA_ROOT, "temp_list.txt")
+                with open(temp_list_file, 'w') as file:
+                    for clip in video_clips:
+                        file.write(f"file '{clip}'\n")
+
+                ffmpeg_cmd = [
+                    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+                    "-i", temp_list_file, "-c", "copy", output_video_path
+                ]
+
+                process = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                print("FFmpeg Output:", process.stdout.decode())  # Debug
+                print("FFmpeg Error:", process.stderr.decode())  # Debug
+                
+                if not os.path.exists(output_video_path):
+                    return render(request, 'animation.html', {'error': "Animation merging failed!"})
+
+            # Convert file path to a media URL
+            video_url = f"{settings.MEDIA_URL}animations/{output_video_filename}"
+
+            # ✅ **Store the text, extracted keywords & video in session**
+            request.session['video_path'] = video_url
+            request.session['entered_text'] = text
+            request.session['filtered_keywords'] = filtered_words
+
+            return redirect(request.path)
 
         except ValueError as ve:
-            logger.error(f"ValueError: {ve}")
             return render(request, 'animation.html', {'error': str(ve)})
 
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return render(request, 'animation.html', {'error': "An unexpected error occurred while processing the text."})
+            return render(request, 'animation.html', {'error': "An unexpected error occurred."})
 
-    return render(request, 'animation.html')
+    # ✅ **Retrieve the stored values (if available)**
+    video_url = request.session.get('video_path', '')
+    entered_text = request.session.get('entered_text', '')
+    filtered_keywords = request.session.get('filtered_keywords', [])
+    # ✅ Debugging: Print values to check
+    print("Session Video URL:", video_url)
+    print("Session Entered Text:", entered_text)
+    print("Session Filtered Keywords:", filtered_keywords)
 
-
+    return render(request, 'animation.html', {
+        'video_path': video_url,
+        'entered_text': entered_text,
+        'filtered_keywords': filtered_keywords
+    })
 
 # Signup view
 def signup_view(request):

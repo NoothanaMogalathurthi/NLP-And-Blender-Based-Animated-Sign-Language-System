@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.urls import path
-from animated_sign_language_system import views  # Correctly import views from your app
+from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 # Custom error handlers
-handler404 = 'animated_sign_language_system.views.error_404_view'  # Correct import path
-handler500 = 'animated_sign_language_system.views.error_500_view'  # Correct import path
+handler404 = 'animated_sign_language_system.views.error_404_view'
+handler500 = 'animated_sign_language_system.views.error_500_view'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,4 +17,4 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('animation/', views.animation_view, name='animation'),
     path('', views.home_view, name='home'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

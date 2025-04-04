@@ -1,182 +1,210 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
-
 {% block content %}
-<div class="animation-content">
-    <div class="split left" style="text-align:center">
-        <h2>Enter Text or Use Mic</h2>
-        <br>
-        <form action="" method="post" style="display: flex; align-items: center; gap: 10px;">
-            {% csrf_token %}
-            <textarea name="sen" class="mytext" id="speechToText" 
-                      placeholder="Type here or use the mic" 
-                      rows="4" cols="50" style="padding: 8px;"></textarea>
-            <button type="button" name="button" class="mic" onclick="record()">
-                <img src="{% static 'mic3.png' %}" height="32px" width="38px" alt="Mic">
-            </button>
-            <input type="submit" name="submit" class="submit" value="Submit">
-        </form>
 
-        <br>
-        <table cellspacing="25px">
-            <tr>
-                <td class="td">The text that you entered is:</td>
-                <td class="td">{{ text }}</td>
-            </tr>
-            <tr>
-                <td class="td">Key words in sentence:</td>
-                <td class="td">
-                    <div id="keywordsContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 8px;">
-                        <ul class="td" id="list" style="margin: 0; padding: 0; list-style-type: none;">
-                            {% for word in words %}
-                                <li id="{{ forloop.counter }}" style="margin-right: 8px;">
-                                    {{ word }}
-                                    {% if synonym_mapping|has_key:word %}
-                                        (Synonym: {{ synonym_mapping|get_item:word }})
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div class="split right" style="text-align:center">
-        <h2>Sign Language Animation</h2>
+<div class="animation-content"><div class="split left" style="text-align:center">
 
-        <div style="text-align:center; margin-bottom: 25px;">
-            <button class="submit" onclick="playPause()">Play/Pause</button>
-        </div>
+    <h2>Enter Text or Use Mic</h2>
 
-        <div style="text-align:center">
-            <video id="videoPlayer" width="650" height="400" preload="auto">
-                <source src="" type="video/mp4">
-                Your browser does not support HTML5 video.
-            </video>
-        </div>
-    </div>
+    <br>
+
+    <form action="" method="post" style="display: flex; align-items: center; gap: 10px;">
+
+        {% csrf_token %}
+
+        <textarea name="sen" class="mytext" id="speechToText" 
+
+                  placeholder="Type here or use the mic" 
+
+                  rows="4" cols="50" style="padding: 8px;"></textarea>
+
+        <button type="button" name="button" class="mic" onclick="record()">
+
+            <img src="{% static 'mic3.png' %}" height="32px" width="38px" alt="Mic">
+
+        </button>
+
+        <input type="submit" name="submit" class="submit" value="Submit">
+
+    </form>
+
+
+
+    <br>
+
+    <table cellspacing="25px">
+<tr>
+    <td class="td">The text that you entered is:</td>
+    <td class="td" id="displayText">
+        {% if entered_text %}
+            {{ entered_text }}
+        {% endif %}
+    </td>
+</tr>
+<tr>
+    <td class="td">Key words in sentence:</td>
+    <td class="td" id="keywords">
+        {% if filtered_keywords %}
+            {{ filtered_keywords|join:" " }}
+        {% endif %}
+    </td>
+</tr>
+</table>
+
+
 </div>
 
+
+
+<div class="split right" style="text-align:center">
+
+    <h2>Sign Language Animation</h2>
+
+    <div style="text-align:center">
+            {% if video_path %}
+                <video id="videoPlayer" width="650" height="400" preload="auto" controls>
+                    <source id="videoSource" src="{{ video_path }}" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+            {% endif %}
+        </div>
+
+</div>
+
+</div>
 <script>
-    // WebkitSpeechRecognition API for speech-to-text conversion
+    
+    let selectedSpeed = 1; // ✅ Global Speed Variable
+ 
+    
+      
+    function updateSpeed() {
+  
+        selectedSpeed = parseFloat(document.getElementById("speedSlider").value);
+  
+        document.getElementById("speedDisplay").innerText = selectedSpeed + "x";
+  
+
+  
+        let videoPlayer = document.getElementById("videoPlayer");
+  
+        videoPlayer.playbackRate = selectedSpeed;
+  
+    }
+  
+
+  
+    document.addEventListener("keydown", function(event) {
+  
+        let speedSlider = document.getElementById("speedSlider");
+  
+        let speed = parseFloat(speedSlider.value);
+  
+
+  
+        if (event.key === "ArrowUp") {
+  
+            speed = Math.min(speed + 0.1, 2);
+  
+        } else if (event.key === "ArrowDown") {
+  
+            speed = Math.max(speed - 0.1, 0.5);
+  
+        }
+  
+        
+  
+        speedSlider.value = speed;
+  
+        updateSpeed();
+  
+    });
+  
+
+  
     function record() {
+  
         try {
-            var recognition = new webkitSpeechRecognition();
+  
+            var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  
             recognition.lang = 'en-IN';
-            recognition.continuous = true; // Enable continuous listening
-            recognition.interimResults = false; // Only capture final results
+  
+            recognition.continuous = true;
+  
+            recognition.interimResults = false;
+  
 
+  
+            let fullTranscript = "";
+  
+
+  
             recognition.onresult = function(event) {
-                clearTimeout(pauseTimeout); // Reset the pause detection timer
-                document.getElementById('speechToText').value = event.results[0][0].transcript;
-            };
+  
+                let transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+  
 
+  
+                if (transcript.includes("faster")) {
+  
+                    let slider = document.getElementById("speedSlider");
+  
+                    slider.value = Math.min(parseFloat(slider.value) + 0.1, 2);
+  
+                    updateSpeed();
+  
+                }
+  
+                if (transcript.includes("slower")) {
+  
+                    let slider = document.getElementById("speedSlider");
+  
+                    slider.value = Math.max(parseFloat(slider.value) - 0.1, 0.5);
+  
+                    updateSpeed();
+  
+                }
+  
+
+  
+                fullTranscript += transcript + " ";
+  
+                document.getElementById('speechToText').value = fullTranscript.trim();
+  
+            };
+  
+
+  
             recognition.onerror = function(event) {
-                alert('Speech recognition error: ' + event.error);
+  
+                console.error("Speech Recognition Error: ", event.error);
+  
+                alert("Speech recognition error: " + event.error);
+  
             };
+  
 
-            let pauseTimeout;
-            recognition.onstart = function() {
-                // Stop recognition after 3 seconds of inactivity
-                pauseTimeout = setTimeout(() => recognition.stop(), 30000); //pause time 30 seconds
-            };
-
+  
             recognition.onend = function() {
-                clearTimeout(pauseTimeout);
-                alert('Speech recognition has stopped.');
+  
+                recognition.start();
+  
             };
+  
 
+  
             recognition.start();
+  
         } catch (error) {
-            alert('Speech recognition is not supported in this browser.');
-            console.error(error);
+  
+            console.error("Speech recognition is not supported in this browser.");
+  
+            alert("Speech recognition is not supported in this browser.");
+  
         }
+  
     }
-
-    let videoSource = [];
-    let currentVideoIndex = 0;
-    let videoInitialized = false;
-
-    function initializePlaylist() {
-        try {
-            const videos = document.getElementById("list").getElementsByTagName("li");
-            videoSource = []; // Reset the playlist
-            for (let j = 0; j < videos.length; j++) {
-                videoSource[j] = "/static/" + videos[j].innerHTML.trim() + ".mp4";
-            }
-            currentVideoIndex = 0; // Reset the current video index
-            videoInitialized = true;
-        } catch (error) {
-            alert('Error initializing the video playlist. Please check the keywords or video files.');
-            console.error(error);
-        }
-    }
-
-    function videoPlay(videoNum) {
-        try {
-            const videoPlayer = document.getElementById("videoPlayer");
-            const videoList = document.getElementById("list").getElementsByTagName("li");
-
-            for (let item of videoList) {
-                item.style.color = "#000000";
-                item.style.fontSize = "25px";
-            }
-
-            videoList[videoNum].style.color = "#09edc7";
-            videoList[videoNum].style.fontSize = "xx-large";
-
-            videoPlayer.setAttribute("src", videoSource[videoNum]);
-            videoPlayer.load();
-            videoPlayer.play();
-        } catch (error) {
-            alert('Error playing video. Please ensure all resources are available.');
-            console.error(error);
-        }
-    }
-
-    function playPause() {
-        try {
-            const videoPlayer = document.getElementById("videoPlayer");
-
-            if (!videoInitialized) {
-                initializePlaylist();
-                videoPlay(0);
-                videoPlayer.addEventListener('ended', myHandler, false);
-            } else if (currentVideoIndex >= videoSource.length) {
-                // Reset to start if playlist has finished
-                currentVideoIndex = 0;
-                videoPlay(currentVideoIndex);
-            } else if (videoPlayer.paused) {
-                videoPlayer.play();
-            } else {
-                videoPlayer.pause();
-            }
-        } catch (error) {
-            alert('Error toggling video playback.');
-            console.error(error);
-        }
-    }
-
-    function myHandler() {
-        try {
-            const videoPlayer = document.getElementById("videoPlayer");
-            const videoList = document.getElementById("list").getElementsByTagName("li");
-
-            videoList[currentVideoIndex].style.color = "#000000";
-            videoList[currentVideoIndex].style.fontSize = "25px";
-
-            currentVideoIndex++;
-            if (currentVideoIndex < videoSource.length) {
-                videoPlay(currentVideoIndex);
-            } else {
-                videoPlayer.pause();
-            }
-        } catch (error) {
-            alert('Error handling video end event.');
-            console.error(error);
-        }
-    }
-</script>
-{% endblock %}
+  
+</script>{% endblock %}

@@ -12,7 +12,6 @@
 }
 #nav-container {
   background-color: #f5e6cc; /* Light beige background */
-  border: 2px solid #6b8e23; /* Olive green border */
   padding: 0; /* Remove extra padding */
   text-align: right;
   margin-bottom: 20px; /* Add space below the navbar */
@@ -44,8 +43,6 @@
   padding: 12px 20px;
   text-decoration: none;
   text-align: center;
-  border: 2px solid #c4a484;
-  border-radius: 8px;
   transition: background-color 0.3s, color 0.3s;
   height: 100%; /* Make sure the buttons stretch to match the nav height */
 }
@@ -220,6 +217,11 @@ body {
   color: red;
   font-weight: bold;
 }
+.favorited {
+    background-color: gold !important; /* Highlight favorited items */
+    color: black !important;
+}
+
 </style>
 <title>Homepage</title>
 </head>
@@ -239,7 +241,7 @@ body {
   {% if user.is_authenticated %}
   <li class="li"><a href="{% url 'logout' %}">Log-Out</a></li>&nbsp;&nbsp;
   {% else %}
-    <li class="li"><a href="{% url 'login' %}">Log-in</a></li>&nbsp;&nbsp;
+  <li class="li"><a href="{% url 'login' %}">Log-in</a></li>&nbsp;&nbsp;
   {% endif %}
   <li class="li"><a href="{% url 'contact' %}">Contact</a></li>&nbsp;&nbsp;
   <li class="li"><a href="{% url 'about' %}">About</a></li>&nbsp;&nbsp;
