@@ -1,3 +1,2 @@
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\Will.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\me.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\go.mp4'
+file 'C:\Users\nooth\OneDrive\Documents\Desktop\Animated-Sign-Language-System\assets\hi.mp4'
+file 'C:\Users\nooth\OneDrive\Documents\Desktop\Animated-Sign-Language-System\assets\hello.mp4'
