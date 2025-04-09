@@ -1,4 +1,5 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,20 +11,19 @@
   width: 50%;
 }
 #nav-container {
-  background-color: #f5e6cc;
-  padding: 0 40px;
-margin-top: 40px;
-  margin-bottom: 40px;
+  background-color: #f5e6cc; /* Light beige background */
+  padding: 0; /* Remove extra padding */
+  text-align: right;
+  margin-bottom: 20px; /* Add space below the navbar */
 }
 
 #nav {
   list-style-type: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  height: 50px;
+  display: flex; /* Use flexbox for better alignment */
+  align-items: center; /* Align items vertically */
+  height: 50px; /* Adjust height as needed */
   background-color: #f5e6cc;
 }
 
@@ -44,31 +44,31 @@ margin-top: 40px;
   text-decoration: none;
   text-align: center;
   transition: background-color 0.3s, color 0.3s;
-  height: 100%;
-  border-radius: 8px;
+  height: 100%; /* Make sure the buttons stretch to match the nav height */
 }
 
 .li a:hover {
-  background-color: #4e6c1f;
-  color: #ffffff;
+  background-color: #4e6c1f; /* Dark green hover */
+  color: #ffffff; /* White text */
 }
 .form-style button {
   width: 89%;
   height: 70%;
   padding: 5%;
-  background: #6b8e23;
-  border-bottom: 2px solid #c4a484;
+  background: #6b8e23; /* Olive green for button background */
+  border-bottom: 2px solid #c4a484; /* Warm tan border */
   border-top-style: none;
   border-right-style: none;
   border-left-style: none;
-  color: #ffffff;
+  color: #ffffff; /* White button text */
   font-weight: bold;
   font-size: 28px;
   font-family: "Times New Roman";
 }
+
 .form-style button:hover {
-  background-color: #4e6c1f;
-  color: #ffffff;
+  background-color: #4e6c1f; /* Forest green hover */
+  color: #ffffff; /* White button text on hover */
   font-weight: bold;
 }
 .split {
@@ -80,14 +80,17 @@ margin-top: 40px;
   overflow-x: hidden;
   padding-top: 20px;
 }
+
 .left {
   left: 15;
   border-right: 0px #feda6a solid;
 }
+
 .right {
   right: 0;
   border-left: 1px #feda6a solid;
 }
+
 .mytext {
   border: 1px solid #393f4d;
   border-right: none;
@@ -100,6 +103,7 @@ margin-top: 40px;
   width: 300px;
   margin-left: 54px;
 }
+
 .mic {
   border: 1px solid #393f4d;
   background: #feda6a;
@@ -113,10 +117,11 @@ margin-top: 40px;
   text-align: center;
   line-height: 16px;
 }
+
 .submit {
-  border: 2px solid #c4a484;
-  background-color: #6b8e23;
-  color: #ffffff;
+  border: 2px solid #c4a484; /* Warm tan border */
+  background-color: #6b8e23; /* Olive green */
+  color: #ffffff; /* White text */
   font-weight: bold;
   font-size: 24px;
   font-family: "Times New Roman";
@@ -124,18 +129,21 @@ margin-top: 40px;
   padding: 10px;
   transition: background-color 0.3s, color 0.3s;
 }
+
 .submit:hover {
-  background-color: #4e6c1f;
-  color: #ffffff;
+  background-color: #4e6c1f; /* Dark green */
+  color: #ffffff; /* White text */
 }
 .td {
-  color: #000000;
+  color: #000000; /* Black table text */
   font-weight: bold;
   font-size: 20px;
 }
+
 body {
-  background-color: #f5e6cc;
+  background-color: #f5e6cc; /* Light beige background */
 }
+
 #error-message {
   display: none;
   color: red;
@@ -143,6 +151,7 @@ body {
   font-weight: bold;
   margin-top: 10px;
 }
+
 .form-style {
   font: 95% Arial, Helvetica, sans-serif;
   max-width: 400px;
@@ -156,7 +165,7 @@ body {
   font-family: "Times New Roman";
   text-align: center;
   margin: -16px -16px 16px -16px;
-  color: #000000;
+  color: #000000; /* Black headings */
 }
 .form-style input[type="text"],
 .form-style input[type="password"],
@@ -175,12 +184,14 @@ body {
   -o-transition: all 0.30s ease-in-out;
   outline: none;
   box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   width: 100%;
   background: #fff;
   margin-bottom: 4%;
   border: 1px solid #ccc;
   padding: 3%;
-  color: #000080;
+  color: #000080; /* Navy blue text for form inputs */
   font: 95% Arial, Helvetica, sans-serif;
 }
 .form-style input[type="text"]:focus,
@@ -198,50 +209,53 @@ body {
   padding: 3%;
   border: 1px solid #000080;
 }
+
 .site-form span, label {
-  color: #000000;
+  color: #000000; /* Black text for labels and spans */
 }
 .errorlist {
   color: red;
   font-weight: bold;
 }
 .favorited {
-  background-color: gold !important;
-  color: black !important;
+    background-color: gold !important; /* Highlight favorited items */
+    color: black !important;
 }
+
 </style>
 <title>Homepage</title>
 </head>
-
-<body>
-<div style="background-color: #f5e6cc; color: #000000; padding: 10px 10px 1px 10px; border: none; margin-bottom: 0;">
-  <h1 align="center" style="margin: 0; font-family: 'Times New Roman'; font-weight: bold;">NLP and Blender Based Animated Sign Language Converter</h1>
+<div style="background-color: #f5e6cc; color: #000000; padding: 10px 10px 1px 10px; border: 5px #f5e6cc groove; margin-bottom: 0;">
+  <h1 align="center">NLP AND BLENDER BASED ANIMATED SIGN LANGUAGE CONVERTOR</h1>
 </div>
-
+<br>
+<body>
 <!-- Global Error Message Display -->
 <div id="error-message"></div>
-
 <div id="nav-container">
-  <ul id="nav">
-    <li class="li"><a class="active" href="{% url 'home' %}">Home</a></li>
-    {% if not user.is_authenticated %}
-    <li class="li"><a href="{% url 'signup' %}">Sign Up</a></li>
-    {% endif %}
-    {% if user.is_authenticated %}
-    <li class="li"><a href="{% url 'logout' %}">Log-Out</a></li>
-    {% else %}
-    <li class="li"><a href="{% url 'login' %}">Log-in</a></li>
-    {% endif %}
-    <li class="li"><a href="{% url 'contact' %}">Contact</a></li>
-    <li class="li"><a href="{% url 'about' %}">About</a></li>
-  </ul>
-</div>
+<ul id="nav">
+  <li class="li"><a class="active" href="{% url 'home' %}">Home</a></li>&nbsp;&nbsp;
+  {% if not user.is_authenticated %}
+  <li class="li"><a href="{% url 'signup' %}">Sign Up</a></li>&nbsp;&nbsp;
+  {% endif %}
+  {% if user.is_authenticated %}
+  <li class="li"><a href="{% url 'logout' %}">Log-Out</a></li>&nbsp;&nbsp;
+  {% else %}
+  <li class="li"><a href="{% url 'login' %}">Log-in</a></li>&nbsp;&nbsp;
+  {% endif %}
+  <li class="li"><a href="{% url 'contact' %}">Contact</a></li>&nbsp;&nbsp;
+  <li class="li"><a href="{% url 'about' %}">About</a></li>&nbsp;&nbsp;
+
+  {% if user.is_authenticated %}
+  <li class="li"><a href="{% url 'history' %}">History</a></li>&nbsp;&nbsp;
+  <li class="li"><a href="{% url 'favorite' %}">Favorites</a></li>&nbsp;&nbsp;
+  {% endif %}
+</ul></div>
 
 <div class="wrapper">
   {% block content %}
   {% endblock %}
 </div>
-
 <script>
   function showError(message) {
       let errorDiv = document.getElementById('error-message');

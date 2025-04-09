@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% get_media_prefix as MEDIA_PREFIX %}
+{% block content %}
+<h2>Your Favorites</h2>
+
+{% if favorites %}
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: center;">
+        <thead style="background-color: #f2f2f2;">
+            <tr>
+                <th>Date/Time</th>
+                <th>Input</th>
+                <th>Keywords</th>
+                <th>Video</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for favorite in favorites %}
+                <tr>
+                    <td>{{ favorite.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ favorite.input_text }}</td>
+                    <td>{{ favorite.keywords|safe }}</td>
+                    <td>
+                        <a href="{% url 'view_animation' favorite.video_path|basename %}">
+        			{{ favorite.video_path }}
+    			</a>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'remove_favorite' favorite.id %}">
+                            {% csrf_token %}
+                            <button type="submit">❌ Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You have no favorite videos.</p>
+{% endif %}
+
+{% endblock %}

@@ -3,208 +3,109 @@
 {% load custom_filters %}
 {% block content %}
 
-<div class="animation-content"><div class="split left" style="text-align:center">
+<div class="animation-content">
+    <div class="split left" style="text-align:center">
+        <h2>Enter Text or Use Mic</h2>
+        <br>
 
-    <h2>Enter Text or Use Mic</h2>
+        <form action="" method="post" style="display: flex; align-items: center; gap: 10px;">
+            {% csrf_token %}
 
-    <br>
+            <textarea name="sen" class="mytext" id="speechToText"
+                      placeholder="Type here or use the mic"
+                      rows="4" cols="50" style="padding: 8px;">{{ entered_text|default_if_none:'' }}</textarea>
 
-    <form action="" method="post" style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" name="button" class="mic" onclick="record()">
+                <img src="{% static 'mic3.png' %}" height="32px" width="38px" alt="Mic">
+            </button>
 
-        {% csrf_token %}
+            <input type="submit" name="submit" class="submit" value="Submit">
+        </form>
 
-        <textarea name="sen" class="mytext" id="speechToText" 
+        <br>
 
-                  placeholder="Type here or use the mic" 
+        <table cellspacing="25px">
+            <tr>
+                <td class="td">The text that you entered is:</td>
+                <td class="td" id="displayText">
+                    {% if entered_text %}
+                        {{ entered_text }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="td">Key words in sentence:</td>
+                <td class="td" id="keywords">
+                    {% if filtered_keywords %}
+                        {{ filtered_keywords|join:" " }}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
 
-                  rows="4" cols="50" style="padding: 8px;"></textarea>
+    <div class="split right" style="text-align:center">
+        <h2>Sign Language Animation</h2>
 
-        <button type="button" name="button" class="mic" onclick="record()">
-
-            <img src="{% static 'mic3.png' %}" height="32px" width="38px" alt="Mic">
-
-        </button>
-
-        <input type="submit" name="submit" class="submit" value="Submit">
-
-    </form>
-
-
-
-    <br>
-
-    <table cellspacing="25px">
-<tr>
-    <td class="td">The text that you entered is:</td>
-    <td class="td" id="displayText">
-        {% if entered_text %}
-            {{ entered_text }}
-        {% endif %}
-    </td>
-</tr>
-<tr>
-    <td class="td">Key words in sentence:</td>
-    <td class="td" id="keywords">
-        {% if filtered_keywords %}
-            {{ filtered_keywords|join:" " }}
-        {% endif %}
-    </td>
-</tr>
-</table>
-
-
-</div>
-
-
-
-<div class="split right" style="text-align:center">
-
-    <h2>Sign Language Animation</h2>
-
-    <div style="text-align:center">
+        <div style="text-align:center">
             {% if video_path %}
-                <video id="videoPlayer" width="650" height="400" preload="auto" controls>
-                    <source id="videoSource" src="{{ video_path }}" type="video/mp4">
-                    Your browser does not support HTML5 video.
-                </video>
-            {% endif %}
+    <h3>Generated Sign Language Animation:</h3>
+    <video width="640" height="360" controls autoplay>
+        <source src="{{ video_path }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+{% else %}
+    <p>No video generated yet.</p>
+{% endif %}
         </div>
-
+    </div>
 </div>
 
-</div>
 <script>
-    
-    let selectedSpeed = 1; // ✅ Global Speed Variable
- 
-    
-      
-    function updateSpeed() {
-  
-        selectedSpeed = parseFloat(document.getElementById("speedSlider").value);
-  
-        document.getElementById("speedDisplay").innerText = selectedSpeed + "x";
-  
-
-  
-        let videoPlayer = document.getElementById("videoPlayer");
-  
-        videoPlayer.playbackRate = selectedSpeed;
-  
-    }
-  
-
-  
-    document.addEventListener("keydown", function(event) {
-  
-        let speedSlider = document.getElementById("speedSlider");
-  
-        let speed = parseFloat(speedSlider.value);
-  
-
-  
-        if (event.key === "ArrowUp") {
-  
-            speed = Math.min(speed + 0.1, 2);
-  
-        } else if (event.key === "ArrowDown") {
-  
-            speed = Math.max(speed - 0.1, 0.5);
-  
-        }
-  
-        
-  
-        speedSlider.value = speed;
-  
-        updateSpeed();
-  
-    });
-  
-
-  
     function record() {
-  
         try {
-  
             var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  
             recognition.lang = 'en-IN';
-  
             recognition.continuous = true;
-  
             recognition.interimResults = false;
-  
 
-  
             let fullTranscript = "";
-  
 
-  
             recognition.onresult = function(event) {
-  
                 let transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-  
 
-  
                 if (transcript.includes("faster")) {
-  
                     let slider = document.getElementById("speedSlider");
-  
                     slider.value = Math.min(parseFloat(slider.value) + 0.1, 2);
-  
                     updateSpeed();
-  
                 }
-  
+
                 if (transcript.includes("slower")) {
-  
                     let slider = document.getElementById("speedSlider");
-  
                     slider.value = Math.max(parseFloat(slider.value) - 0.1, 0.5);
-  
                     updateSpeed();
-  
                 }
-  
 
-  
                 fullTranscript += transcript + " ";
-  
                 document.getElementById('speechToText').value = fullTranscript.trim();
-  
             };
-  
 
-  
             recognition.onerror = function(event) {
-  
                 console.error("Speech Recognition Error: ", event.error);
-  
                 alert("Speech recognition error: " + event.error);
-  
             };
-  
 
-  
             recognition.onend = function() {
-  
                 recognition.start();
-  
             };
-  
 
-  
             recognition.start();
-  
+
         } catch (error) {
-  
             console.error("Speech recognition is not supported in this browser.");
-  
             alert("Speech recognition is not supported in this browser.");
-  
         }
-  
     }
-  
-</script>{% endblock %}
+</script>
+
+{% endblock %}

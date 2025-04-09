@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% get_media_prefix as MEDIA_PREFIX %}
+{% block content %}
+
+<h2>Your History</h2>
+{% if history %}
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: center;">
+        <thead style="background-color: #f2f2f2;">
+            <tr>
+                <th>Date & Time</th>
+                <th>Input</th>
+                <th>Keywords</th>
+                <th>Video Link</th>
+                <th>Favorite</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in history %}
+                <tr>
+                    <td>{{ entry.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ entry.input_text }}</td>
+                    <td>{{ entry.keywords }}</td>
+                    <td>
+			<a href="{% url 'view_animation' entry.video_path|basename %}">								{{ entry.video_path|basename }}
+			</a>
+                    </td>
+                    <td>
+                        {% if entry.video_path in favorite_video_paths %}
+                            <p>★ Already in Favorites</p>
+                        {% else %}
+                            <form method="post" action="{% url 'add_favorite' entry.id %}">
+                                {% csrf_token %}
+                                <button type="submit">Add to Favorites ❤️</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No history yet.</p>
+{% endif %}
+{% endblock %}
