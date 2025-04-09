@@ -19,7 +19,7 @@
         <tbody>
             {% for favorite in favorites %}
                 <tr>
-                    <td>{{ favorite.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ favorite.created_at|date:"Y-m-d" }}</td>
                     <td>{{ favorite.input_text }}</td>
                     <td>{{ favorite.keywords|safe }}</td>
                     <td>
