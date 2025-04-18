@@ -26,11 +26,16 @@
             <input type="password" name="password2" id="id_password2" required>
         </div>
 
-        <!-- Password Toggle Checkbox -->
+        <!-- Show Password Option -->
         <label>
             <input type="checkbox" onclick="togglePassword()"> Show Password
         </label>
-        
+
+        <!-- ✅ Error Display -->
+        {% if error %}
+            <p style="color: red; font-weight: bold;">{{ error }}</p>
+        {% endif %}
+
         <br><br>
         <input class="submit" type="submit" value="Sign Up">
     </form>

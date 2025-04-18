@@ -92,13 +92,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-IN'
 
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+# settings.py
+
+TIME_ZONE = 'Asia/Kolkata'  # or your desired local time zone
+USE_TZ = True  # Keep this as True to use timezone-aware datetime
+
+
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [

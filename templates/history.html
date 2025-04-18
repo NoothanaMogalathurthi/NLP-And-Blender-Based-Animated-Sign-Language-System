@@ -19,7 +19,7 @@
         <tbody>
             {% for entry in history %}
                 <tr>
-                    <td>{{ entry.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ entry.created_at|date:"Y-m-d H:i" }}</td>
                     <td>{{ entry.input_text }}</td>
                     <td>{{ entry.keywords }}</td>
                     <td>

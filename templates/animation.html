@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
 {% block content %}
 
 <div class="animation-content">
@@ -35,9 +34,12 @@
             </tr>
             <tr>
                 <td class="td">Key words in sentence:</td>
-                <td class="td" id="keywords">
-                    {% if filtered_keywords %}
-                        {{ filtered_keywords|join:" " }}
+                <td class="td">
+        	    <ul id="keywords" style="list-style: none; padding-left: 0; text-align: left;">
+                    {% if display_sequence %}
+                        {% for word in display_sequence %}
+                             <li><span class="sign-word" id="word-{{ forloop.counter0 }}">{{ word }}</span></li>
+                        {% endfor %}
                     {% endif %}
                 </td>
             </tr>
@@ -49,63 +51,92 @@
 
         <div style="text-align:center">
             {% if video_path %}
-    <h3>Generated Sign Language Animation:</h3>
-    <video width="640" height="360" controls autoplay>
-        <source src="{{ video_path }}" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-{% else %}
-    <p>No video generated yet.</p>
-{% endif %}
+                <h3>Generated Sign Language Animation:</h3>
+                <video id="signVideo" width="640" height="360" controls autoplay>
+                    <source src="{{ video_path }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% else %}
+                <p>No video generated yet.</p>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <script>
-    function record() {
+function record() {
         try {
-            var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.lang = 'en-IN';
             recognition.continuous = true;
             recognition.interimResults = false;
 
+            const TOTAL_DURATION = 30000; // Total speech time: 30s
+            const MAX_PAUSE_DURATION = 5000; // Max pause allowed: 5s
+
             let fullTranscript = "";
+            let startTime = Date.now();
+            let pauseTimer = null;
 
             recognition.onresult = function(event) {
-                let transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-
-                if (transcript.includes("faster")) {
-                    let slider = document.getElementById("speedSlider");
-                    slider.value = Math.min(parseFloat(slider.value) + 0.1, 2);
-                    updateSpeed();
-                }
-
-                if (transcript.includes("slower")) {
-                    let slider = document.getElementById("speedSlider");
-                    slider.value = Math.max(parseFloat(slider.value) - 0.1, 0.5);
-                    updateSpeed();
-                }
-
+                let transcript = event.results[event.results.length - 1][0].transcript;
+                transcript = transcript.replace(/[,.]/g, '');
                 fullTranscript += transcript + " ";
                 document.getElementById('speechToText').value = fullTranscript.trim();
+
+                if (pauseTimer) clearTimeout(pauseTimer);
+                pauseTimer = setTimeout(() => {
+                    recognition.stop();
+                    alert("Speech stopped due to 5-second pause.");
+                }, MAX_PAUSE_DURATION);
             };
 
             recognition.onerror = function(event) {
-                console.error("Speech Recognition Error: ", event.error);
-                alert("Speech recognition error: " + event.error);
+                alert('Speech recognition error: ' + event.error);
+                recognition.stop();
+                if (pauseTimer) clearTimeout(pauseTimer);
             };
 
             recognition.onend = function() {
-                recognition.start();
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime < TOTAL_DURATION) {
+                    recognition.start();
+                } else {
+                    alert("Speech input time (30s) is over.");
+                }
+                if (pauseTimer) clearTimeout(pauseTimer);
             };
 
             recognition.start();
-
         } catch (error) {
-            console.error("Speech recognition is not supported in this browser.");
-            alert("Speech recognition is not supported in this browser.");
+            alert('Speech recognition is not supported in this browser.');
+            console.error(error);
         }
-    }
+}
+
+// ✅ Highlight active word/letter during video playback
+document.addEventListener("DOMContentLoaded", function () {
+    const video = document.getElementById("signVideo");
+    if (!video) return;
+
+    const chips = document.querySelectorAll(".sign-word");
+    const durationPerClip = 2; // Adjust based on avg duration of signs
+
+    video.addEventListener("timeupdate", function () {
+        const index = Math.floor(video.currentTime / durationPerClip);
+        chips.forEach((chip, i) => {
+            chip.style.backgroundColor = i === index ? "yellow" : "";
+            chip.style.fontWeight = i === index ? "bold" : "";
+        });
+    });
+
+    video.addEventListener("ended", function () {
+        chips.forEach(chip => {
+            chip.style.backgroundColor = "";
+            chip.style.fontWeight = "";
+        });
+    });
+});
 </script>
 
 {% endblock %}

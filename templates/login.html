@@ -15,11 +15,34 @@
             <label for="id_password">Password:</label>
             <input type="password" name="password" id="id_password" required>
         </div>
-	<p class="text-center">
+	<!-- Show Password Option -->
+        <div>
+	    <label>
+                 <input type="checkbox" onclick="togglePassword()"> Show Password
+            </label>
+	</div>
+	&nbsp;&nbsp;
+	<div class="text-center">
   		<a href="{% url 'forgot_password' %}">Forgot Password?</a>
-	</p>
-        <input class="submit" type="submit" value="Log in">
-        
+	</div>
+	&nbsp;&nbsp;
+	<div>
+        	<input class="submit" type="submit" value="Log in">
+        </div>
     </form>
 </div>
+
+<!-- JavaScript to Toggle Password Visibility -->
+<script>
+    function togglePassword() {
+        var password = document.getElementById("id_password");
+
+        if (password.type === "password") {
+            password.type = "text";
+        } else {
+            password.type = "password";
+        }
+    }
+</script>
+
 {% endblock %}

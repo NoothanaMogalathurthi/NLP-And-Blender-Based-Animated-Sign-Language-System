@@ -17,6 +17,7 @@ import json
 import os
 import subprocess  # For FFmpeg animation merging
 from django.conf import settings
+from django.utils import timezone 
 import re
 import contractions
 from .models import History, Favorite  # Importing History and Favorite models
@@ -63,7 +64,9 @@ def find_synonym(word):
 
     return synonyms[0] if synonyms else None
 
-@login_required(login_url="login") 
+from django.utils import timezone  # add this to the top of views.py
+
+@login_required(login_url="login")
 def animation_view(request):
     if request.method == 'POST':
         try:
@@ -72,31 +75,69 @@ def animation_view(request):
             if not text:
                 return render(request, 'animation.html', {'error': "Please enter text."})
 
-            # NLP preprocessing
+            # Preprocessing
             text = contractions.fix(text)
-            text = re.sub(r'[^\w\s]', ' ', text)  
-            text = re.sub(r'\s+', ' ', text).strip()
-            text = text.lower()
+            text = re.sub(r'[^\w\s]', ' ', text)
+            text = re.sub(r'\s+', ' ', text).strip().lower()
 
+            # Sentence-level animation check in assets and media folders
+            sentence_variants = [
+                text.replace(" ", ""),      # thankyou
+                text.replace(" ", "_"),     # thank_you
+                text                          # thank you
+            ]
+
+            for variant in sentence_variants:
+                sentence_filename = variant + ".mp4"
+
+                # Check in assets (static)
+                static_path = finders.find(sentence_filename)
+
+                if static_path:
+                    video_url = (
+                        f"{settings.MEDIA_URL}animations/{sentence_filename}"
+                    )
+
+                    # ✅ Update or create history
+                    existing_entry = History.objects.filter(user=request.user, input_text=text).first()
+                    if existing_entry:
+                        existing_entry.created_at = timezone.now()
+                        existing_entry.keywords = json.dumps([variant], cls=DjangoJSONEncoder)
+                        existing_entry.video_path = f"animations/{sentence_filename}"
+                        existing_entry.save()
+                    else:
+                        History.objects.create(
+                            user=request.user,
+                            input_text=text,
+                            keywords=json.dumps([variant], cls=DjangoJSONEncoder),
+                            video_path=f"animations/{sentence_filename}"
+                        )
+
+                    request.session['video_path'] = video_url
+                    request.session['entered_text'] = text
+                    request.session['filtered_keywords'] = [variant]
+                    request.session['display_sequence'] = [variant]
+                    return redirect('animation')
+
+            # If no sentence-level animation, do word-by-word
             words = word_tokenize(text)
             tagged = nltk.pos_tag(words)
 
             tense = {
-                "future": len([word for word in tagged if word[1] == "MD"]),
-                "present": len([word for word in tagged if word[1] in ["VBP", "VBZ", "VBG"]]),
-                "past": len([word for word in tagged if word[1] in ["VBD", "VBN"]]),
-                "present_continuous": len([word for word in tagged if word[1] == "VBG"]),
+                "future": len([w for w in tagged if w[1] == "MD"]),
+                "present": len([w for w in tagged if w[1] in ["VBP", "VBZ", "VBG"]]),
+                "past": len([w for w in tagged if w[1] in ["VBD", "VBN"]]),
+                "present_continuous": len([w for w in tagged if w[1] == "VBG"]),
             }
             probable_tense = max(tense, key=tense.get)
 
             important_words = {"i", "he", "she", "they", "we", "what", "where", "how", "you", "your", "my", "name", "hear", "book", "sign", "me", "yes", "no", "not", "this", "it", "we", "us", "our", "that", "when"}
             stop_words = set(stopwords.words('english')) - important_words
             stop_words.update(['would', 'could', 'shall'])
+
             isl_replacements = {"i": "me"}
             lr = WordNetLemmatizer()
-
             filtered_words = []
-            video_clips = []
 
             for word, tag in tagged:
                 if word not in stop_words:
@@ -114,102 +155,89 @@ def animation_view(request):
                 filtered_words.insert(0, "Will")
             elif probable_tense == "present_continuous" and tense["present_continuous"] > 0:
                 filtered_words.insert(0, "Now")
-            print(f"Final Processed Words: {filtered_words}")
 
-            processed_words = []
-            for w in filtered_words:
-                path = w + ".mp4"
+            display_sequence = []
+            video_clips = []
+
+            for word in filtered_words:
+                path = word + ".mp4"
                 animation_path = finders.find(path)
 
                 if animation_path:
-                    processed_words.append(w)
+                    display_sequence.append(word)
                     video_clips.append(animation_path)
                 else:
-                    synonym = find_synonym(w)
+                    synonym = find_synonym(word)
                     if synonym and finders.find(synonym + ".mp4"):
-                        processed_words.append(synonym)
+                        display_sequence.append(synonym)
                         video_clips.append(finders.find(synonym + ".mp4"))
                     else:
-                        for letter in w:
-                            letter_path = letter + ".mp4"
-                            if finders.find(letter_path):
-                                video_clips.append(finders.find(letter_path))
-                                processed_words.append(letter)
-                                
-            # ✅ Check for missing animations
-            missing_files = [w for w in processed_words if not finders.find(w + ".mp4")]
+                        for letter in word:
+                            if finders.find(letter + ".mp4"):
+                                display_sequence.append(letter)
+                                video_clips.append(finders.find(letter + ".mp4"))
+
+            missing_files = [w for w in display_sequence if not finders.find(w + ".mp4")]
             if missing_files:
-                print("Missing Animations:", missing_files)
-                return render(request, 'animation.html', {'error': f"Missing animations for {', '.join(missing_files)}"})
+                return render(request, 'animation.html', {'error': f"Missing animations for: {', '.join(missing_files)}"})
 
-            # ✅ Generate safe file names and paths
-            # Replace spaces with underscores and remove special characters
-            sanitized_text = text.replace(' ', '_')  # Turn spaces into underscores
-            sanitized_text = re.sub(r'[^\w\-_]', '', sanitized_text)  # Clean any bad characters
+            sanitized_text = re.sub(r'[^\w\-_]', '', text.replace(' ', '_'))
+            output_filename = f"{sanitized_text}.mp4"
+            output_path = os.path.join(settings.MEDIA_ROOT, "animations", output_filename)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-            output_video_filename = f"{sanitized_text}.mp4"
-            output_video_path = os.path.join(settings.MEDIA_ROOT, "animations", output_video_filename)
-            os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
-
-            # ✅ Merge video clips using FFmpeg
             if video_clips:
-                temp_list_file = os.path.join(settings.MEDIA_ROOT, "temp_list.txt")
-                with open(temp_list_file, 'w') as file:
+                temp_list = os.path.join(settings.MEDIA_ROOT, "temp_list.txt")
+                with open(temp_list, 'w') as file:
                     for clip in video_clips:
                         file.write(f"file '{clip}'\n")
 
                 ffmpeg_cmd = [
                     "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-                    "-i", temp_list_file,
-                    "-vf", "eq=brightness=0.2:contrast=1.4",
+                    "-i", temp_list,
+                    "-vf", "eq=brightness=0.3:contrast=1.6",
                     "-c:a", "copy",
-                    output_video_path
+                    output_path
                 ]
+                subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                process = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print("FFmpeg Output:", process.stdout.decode())
-                print("FFmpeg Error:", process.stderr.decode())
+                if not os.path.exists(output_path):
+                    return render(request, 'animation.html', {'error': "Failed to create animation video."})
 
-                if not os.path.exists(output_video_path):
-                    return render(request, 'animation.html', {'error': "Animation merging failed!"})
+            video_url = f"{settings.MEDIA_URL}animations/{output_filename}"
 
-            # ✅ Convert path to URL for frontend
-            video_url = f"animations/{output_video_filename}"
-            full_video_url = f"{settings.MEDIA_URL}{video_url}"
-
-            # ✅ Save to History
-            # ✅ Save to History only if not already present
-            if not History.objects.filter(user=request.user, input_text=text).exists():
+            # ✅ Update or create history for merged output
+            existing_entry = History.objects.filter(user=request.user, input_text=text).first()
+            if existing_entry:
+                existing_entry.created_at = timezone.now()
+                existing_entry.keywords = json.dumps(filtered_words, cls=DjangoJSONEncoder)
+                existing_entry.video_path = f"animations/{output_filename}"
+                existing_entry.save()
+            else:
                 History.objects.create(
                     user=request.user,
                     input_text=text,
                     keywords=json.dumps(filtered_words, cls=DjangoJSONEncoder),
-                    video_path=video_url
+                    video_path=f"animations/{output_filename}"
                 )
 
-            # ✅ Store data in session for GET reload
-            request.session['video_path'] = full_video_url
+            request.session['video_path'] = video_url
             request.session['entered_text'] = text
             request.session['filtered_keywords'] = filtered_words
+            request.session['display_sequence'] = display_sequence
 
             return redirect('animation')
 
         except Exception as e:
-            print("Error:", e)
-            return render(request, 'animation.html', {'error': "An unexpected error occurred."})
+            print("ERROR:", e)
+            return render(request, 'animation.html', {'error': "Unexpected error occurred."})
 
-    # ✅ GET request: retrieve session values
-    video_path = request.session.get('video_path', '')
-    entered_text = request.session.get('entered_text', '')
-    filtered_keywords = request.session.get('filtered_keywords', [])
-
-    context = {
-        'video_path': video_path,
-        'entered_text': entered_text,
-        'filtered_keywords': filtered_keywords
-    }
-
-    return render(request, 'animation.html', context)
+    return render(request, 'animation.html', {
+        'video_path': request.session.get('video_path'),
+        'entered_text': request.session.get('entered_text'),
+        'filtered_keywords': request.session.get('filtered_keywords'),
+        'display_sequence': request.session.get('display_sequence', [])
+    })
 
 
 @login_required(login_url="login")
@@ -247,24 +275,40 @@ def remove_favorite(request, favorite_id):
 
 @login_required(login_url="login")
 def load_animation_from_history(request, video_filename):
-    """Load animation from a specific video path from history/favorites."""
     video_path = f"animations/{video_filename}"
     full_video_url = f"{settings.MEDIA_URL}{video_path}"
 
-    # Get text and keywords if possible (optional: enhance later)
+    # Fetch the history entry
     history_entry = History.objects.filter(user=request.user, video_path=video_path).first()
     entered_text = history_entry.input_text if history_entry else ''
     filtered_keywords = json.loads(history_entry.keywords) if history_entry else []
 
-    context = {
-        'video_path': full_video_url,
-        'entered_text': entered_text,
-        'filtered_keywords': filtered_keywords
-    }
+    # ✅ Recreate the display sequence using keyword animations
+    display_sequence = []
+    for word in filtered_keywords:
+        path = word + ".mp4"
+        animation_path = finders.find(path)
 
-    return render(request, 'animation.html', context)
+        if animation_path:
+            display_sequence.append(word)
+        else:
+            synonym = find_synonym(word)
+            if synonym and finders.find(synonym + ".mp4"):
+                display_sequence.append(synonym)
+            else:
+                for letter in word:
+                    if finders.find(letter + ".mp4"):
+                        display_sequence.append(letter)
 
-# Signup view
+    # ✅ Set all data in session like animation_view does
+    request.session['video_path'] = full_video_url
+    request.session['entered_text'] = entered_text
+    request.session['filtered_keywords'] = filtered_keywords
+    request.session['display_sequence'] = display_sequence
+
+    # ✅ Redirect to animation page to use shared logic
+    return redirect('animation')
+
 def signup_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -278,16 +322,20 @@ def signup_view(request):
         if password1 != password2:
             return render(request, 'signup.html', {'error': "Passwords do not match."})
 
+        if User.objects.filter(username=username).exists():
+            return render(request, 'signup.html', {'error': "Username already taken."})
+
         if User.objects.filter(email=email).exists():
-            return render(request, 'signup.html', {'error': "Email already exists."})
+            return render(request, 'signup.html', {'error': "Email already registered."})
 
         try:
             user = User.objects.create_user(username=username, email=email, password=password1)
             user.save()
-            login(request, user)  
+            login(request, user)
             return redirect('animation')
         except Exception as e:
-            return render(request, 'signup.html', {'error': f"Error: {e}"})
+            print("Signup error:", e)
+            return render(request, 'signup.html', {'error': "Something went wrong. Please try again."})
 
     return render(request, 'signup.html')
 
