@@ -1,5 +1,2 @@
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\hi.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\me.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\a.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\n.mp4'
-file 'C:\Users\Divya\OneDrive\Desktop\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\u.mp4'
+file 'C:\Users\koppa\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\how.mp4'
+file 'C:\Users\koppa\NLP-And-Blender-Based-Animated-Sign-Language-System\assets\you.mp4'
